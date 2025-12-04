@@ -1,14 +1,16 @@
+import { AuthRequest } from "../middlewares/middleware";
 import { UserService } from "../services/User-service"
+import { Response } from "express";
 const userService=new UserService();
 
-export const SignUp=async(req:any,res:any)=>{
+export const SignUp=async(req:AuthRequest,res:Response)=>{
     try 
     {
         const data=req.body
-        const user=await userService.SignUp(data);
+        const result=await userService.SignUp(data);
         res.status(200).json({
             message:"User signed up successfully",
-            user:user
+            data:result
         })
         
     } 
@@ -21,15 +23,15 @@ export const SignUp=async(req:any,res:any)=>{
     }
 }
 
-export const SignIn=async(req:any,res:any)=>
+export const SignIn=async(req:AuthRequest,res:Response)=>
 {
      try 
     {
         const data=req.body
-        const user=await userService.SignIN(data);
+        const result=await userService.SignIN(data);
         res.status(200).json({
             message:"User signed in successfully",
-            user:user
+            data:result
         })
         
     } 
@@ -42,7 +44,7 @@ export const SignIn=async(req:any,res:any)=>
     }
 
 }
-export const CreateRoom=async(req:any,res:any)=>{
+export const CreateRoom=async(req:AuthRequest,res:Response)=>{
      try 
     {
         const data=req.body

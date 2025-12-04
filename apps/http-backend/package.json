@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@repo/typescript-config": "*",
+    "@repo/backend-common":"*",
+    "@repo/common":"*",
     "@types/bcrypt": "^6.0.0",
     "@types/body-parser": "^1.19.6",
     "@types/cors": "^2.8.19",

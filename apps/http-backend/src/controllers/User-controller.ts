@@ -1,3 +1,4 @@
+import { SignInSchema, UserSchema } from "@repo/common/config";
 import { AuthRequest } from "../middlewares/middleware";
 import { UserService } from "../services/User-service"
 import { Response } from "express";
@@ -6,8 +7,14 @@ const userService=new UserService();
 export const SignUp=async(req:AuthRequest,res:Response)=>{
     try 
     {
-        const data=req.body
-        const result=await userService.SignUp(data);
+        const parsed=UserSchema.safeParse(req.body)
+        if(!parsed.success)
+        {
+            return res.json({
+                message:"Incorrect inputs"
+            })
+        }
+        const result=await userService.SignUp(parsed.data);
         res.status(200).json({
             message:"User signed up successfully",
             data:result
@@ -27,8 +34,14 @@ export const SignIn=async(req:AuthRequest,res:Response)=>
 {
      try 
     {
-        const data=req.body
-        const result=await userService.SignIN(data);
+        const parsed=SignInSchema.safeParse(req.body)
+         if(!parsed.success)
+        {
+            return res.json({
+                message:"Incorrect inputs"
+            })
+        }
+        const result=await userService.SignIN(parsed.data);
         res.status(200).json({
             message:"User signed in successfully",
             data:result

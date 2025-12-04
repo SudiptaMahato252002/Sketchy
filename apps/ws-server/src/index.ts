@@ -1,9 +1,8 @@
 import { WebSocketServer ,WebSocket} from "ws";
 import * as url from 'url'
 import jwt, { JwtPayload } from 'jsonwebtoken'
-import {config} from 'dotenv'
+import { JWT_SECRET } from "@repo/backend-common/config";
 
-config({path:"D:/Excalidraw/apps/http-backend/.env"})
 const wss=new WebSocketServer({port:8100})
 
 wss.on("connection",(ws:WebSocket,req)=>{
@@ -23,7 +22,7 @@ wss.on("connection",(ws:WebSocket,req)=>{
         return;
     }
 
-    const decoded=jwt.verify(token,process.env.JWT_SECRET!)
+    const decoded=jwt.verify(token,JWT_SECRET!)
     if(!decoded||!(decoded as JwtPayload).userId)
     {
         ws.close();

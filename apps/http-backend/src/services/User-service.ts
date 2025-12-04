@@ -1,8 +1,6 @@
 import { UserRepository } from "../respository";
 import jwt, { SignOptions } from "jsonwebtoken";
-import {config} from "dotenv"
-
-config({path:"D:\Excalidraw\apps\http-backend\.env"})
+import { JWT_EXPIRES_IN, JWT_SECRET } from "@repo/backend-common/config";
 
 const userRepo=new UserRepository()
 
@@ -12,9 +10,9 @@ class UserService
 
     private generateToken(userId:string):string
     {
-        const secret=process.env.JWT_SECRET as string
+        const secret=JWT_SECRET as string
         const options: SignOptions = {
-            expiresIn:(process.env.JWT_EXPIRES_IN || "7d")as SignOptions["expiresIn"],
+            expiresIn:(JWT_EXPIRES_IN || "7d")as SignOptions["expiresIn"],
   };
         return jwt.sign({userId},secret,options)
     }

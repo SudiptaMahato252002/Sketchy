@@ -1,6 +1,7 @@
 import { Request,NextFunction,Response } from "express";
 import jwt from 'jsonwebtoken'
-import 'dotenv/conifg'
+import { JWT_EXPIRES_IN, JWT_SECRET } from "@repo/backend-common/config";
+
 export interface AuthRequest extends Request
 {
     userId?:string
@@ -18,7 +19,7 @@ export const middleware=async(req:AuthRequest,res:Response,next:NextFunction)=>
             })
         }
 
-        const decoded=jwt.verify(token,process.env.JWT_SECRET!)as {userId:string}
+        const decoded=jwt.verify(token,JWT_SECRET!)as {userId:string}
         if(decoded)
         {
             req.userId=decoded.userId

@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm"
-import { db } from "../db"
-import { users } from "../db/schema"
+import { db } from '@repo/db/client'
+import { users } from "@repo/db/schema"
 import bcrypt from 'bcrypt'
 
 
@@ -9,7 +9,7 @@ class UserRepository
 {
     constructor(){}
 
-    async SignUp(data:{email:string,password:string})
+    async SignUp(data:{email:string,password:string,username:string})
     {
         try 
         {
@@ -19,7 +19,7 @@ class UserRepository
                 throw new Error('User with this email already exists');
             }
             const hashedPassword=await bcrypt.hash(data.password,10)
-            const newUser=await db.insert(users).values({email:data.email,password:hashedPassword}).returning({id: users.id,email: users.email,createdAt: users.createdAt,});     
+            const newUser=await db.insert(users).values({email:data.email,password:hashedPassword,username:data.username}).returning({id: users.id,email: users.email,username:users.username,createdAt: users.createdAt,});     
             return newUser[0];
         } 
         catch (error) 

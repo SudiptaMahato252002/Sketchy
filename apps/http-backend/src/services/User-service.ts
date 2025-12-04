@@ -17,13 +17,13 @@ class UserService
         return jwt.sign({userId},secret,options)
     }
 
-    async SignUp(data:{email:string,password:string})
+    async SignUp(data:{email:string,username:string,password:string})
     {
         try 
         {
-            if(!data.email||!data.password)
+            if(!data.email||!data.password||!data.username)
             {
-                throw new Error('Email and password are required');
+                throw new Error('Email and password and Username are required');
             }
 
             const user=await userRepo.SignUp(data)
@@ -33,6 +33,7 @@ class UserService
                 user:{
                     id:user?.id,
                     email:user?.email,
+                    username:user?.username,
                     createdAt:user?.createdAt
                 },
                 token

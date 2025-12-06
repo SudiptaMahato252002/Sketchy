@@ -4,7 +4,9 @@ import { JWT_EXPIRES_IN, JWT_SECRET } from "@repo/backend-common/config";
 
 export interface AuthRequest extends Request
 {
-    userId?:string
+    userId?:string,
+    refreshToken?:string,
+    types?:string
 }
 
 export const middleware=async(req:AuthRequest,res:Response,next:NextFunction)=>
@@ -12,7 +14,7 @@ export const middleware=async(req:AuthRequest,res:Response,next:NextFunction)=>
     try 
     {
         const authHeader=req.headers.authorization
-        if(!authHeader||!authHeader.startsWith('Bearer:'))
+        if(!authHeader||!authHeader.startsWith('Bearer '))
         {
             return res.status(401).json({
             message: 'Access token is required',

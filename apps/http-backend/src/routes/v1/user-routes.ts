@@ -8,7 +8,7 @@ userRouter.post("/sign-up",SignUp)
 userRouter.post("/sign-in",SignIn)
 userRouter.post("/refresh-access-token", RefreshAccessToken);
 
-userRouter.post("/logout", Logout); // Only needs refresh token in body
+userRouter.post("/logout",middleware, Logout); // Only needs refresh token in body
 userRouter.post("/logout-all", middleware, LogoutAllDevices);
 userRouter.get("/:userId/sessions", middleware, GetActiveSessions);
 userRouter.post("/create-room",middleware,CreateRoom)

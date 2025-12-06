@@ -6,7 +6,9 @@ import cors from 'cors'
 const app=express()
 
 app.use(cors())
-app.use(bodyParser.json())
+// app.use(bodyParser.json())
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 app.use("/api",appRouter)
 
 const port=3200

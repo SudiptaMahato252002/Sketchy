@@ -2,6 +2,7 @@ import { SignInSchema, UserSchema } from "@repo/common/config";
 import { AuthRequest } from "../middlewares/middleware";
 import { UserService } from "../services/User-service"
 import { Response } from "express";
+import { console } from "inspector";
 const userService=new UserService();
 
 export const SignUp=async(req:AuthRequest,res:Response)=>{
@@ -91,8 +92,11 @@ export const RefreshAccessToken=async(req:AuthRequest,res:Response)=>{
 }
 
 export const Logout=async(req:AuthRequest,res:Response)=>{
+    console.log(req.body)
     try 
     {
+        
+        console.log(req.body)
         const {refreshToken}=req.body;
         if(!refreshToken)
         {
@@ -100,7 +104,7 @@ export const Logout=async(req:AuthRequest,res:Response)=>{
             message: "Refresh token is required",
             });
         }
-        const result=await userService.Logout(refreshToken);
+        const result=await userService.Logout({refreshToken});
         return res.status(200).json({
         message: result.message,
         });

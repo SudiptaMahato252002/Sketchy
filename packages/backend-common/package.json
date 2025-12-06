@@ -3,10 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "exports":{
-    "./config":"./src/index.ts"
+  "exports": {
+    "./config": "./src/index.ts"
   },
-
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -17,6 +16,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/node": "^24.10.1"
+    "@types/dotenv": "^6.1.1",
+    "@types/node": "^24.10.1",
+    "dotenv": "^17.2.3"
   }
 }

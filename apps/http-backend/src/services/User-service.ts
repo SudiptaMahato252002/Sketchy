@@ -1,26 +1,47 @@
-import { UserRepository } from "../respository";
+import { SessionRepository, UserRepository } from "../respository";
 import jwt, { SignOptions } from "jsonwebtoken";
-import { JWT_EXPIRES_IN, JWT_SECRET } from "@repo/backend-common/config";
+import { ACCESS_TOKEN_EXPIRY, JWT_EXPIRES_IN, JWT_SECRET } from "@repo/backend-common/config";
 
 const userRepo=new UserRepository()
-
+const sessionRepo=new SessionRepository()
 class UserService
 {
     constructor(){}
 
-    private generateToken(userId:string):string
+    private generateAccessToken(userId:string):string
     {
         const secret=JWT_SECRET as string
+        console.log(secret)
         const options: SignOptions = {
-            expiresIn:(JWT_EXPIRES_IN || "7d")as SignOptions["expiresIn"],
-  };
-        return jwt.sign({userId},secret,options)
+            expiresIn:(ACCESS_TOKEN_EXPIRY|| "15d")as SignOptions["expiresIn"],
+        };
+
+        return jwt.sign({userId,type:'access'},secret,options)
     }
 
-    async SignUp(data:{email:string,username:string,password:string})
+    private verifyAccessToken(token:string)
     {
         try 
         {
+            const decoded=jwt.verify(token,JWT_SECRET!)as{userId:string;type:string}
+            if(decoded.type!=='access')
+            {
+                throw new Error('Invalid token type');
+            } 
+            return {userId:decoded.userId}           
+        } 
+        catch (error) 
+        {
+            throw new Error('Invalid or expired access token');
+        }
+
+    }
+
+    async SignUp(data:{email:string,username:string,password:string,deviceInfo?:string,ipAddress?:string})
+    {
+        try 
+        {
+            console.log(data)
             if(!data.email||!data.password||!data.username)
             {
                 throw new Error('Email and password and Username are required');
@@ -28,7 +49,8 @@ class UserService
 
             const user=await userRepo.SignUp(data)
             const userId=user!.id
-            const token=this.generateToken(userId)
+            const accessToken=this.generateAccessToken(userId)
+            const session=await sessionRepo.CreateSession({userId:userId,deviceInfo:data.deviceInfo,ipAddress:data.ipAddress})
             return {
                 user:{
                     id:user?.id,
@@ -36,7 +58,8 @@ class UserService
                     username:user?.username,
                     createdAt:user?.createdAt
                 },
-                token
+                accessToken,
+                refreshToke:session?.refreshToken
             }
         } 
         catch (error) 
@@ -45,7 +68,7 @@ class UserService
             throw error;
         }
     }
-    async SignIN(data:{email:string,password:string})
+    async SignIN(data:{email:string,password:string,deviceInfo?:string,ipAddress?:string})
     {
         try 
         {
@@ -54,14 +77,18 @@ class UserService
                 throw new Error('Email and password are required');
             }
             const user=await userRepo.SignIn(data)
-            const token = this.generateToken(user.id);
+            const accessToken = this.generateAccessToken(user.id);
+            const session=await sessionRepo.CreateSession({
+               userId:user.id,deviceInfo:data.deviceInfo,ipAddress:data.ipAddress 
+            })
             return {
                 user: {
                 id: user.id,
                 email: user.email,
                 createdAt: user.createdAt,
                 },  
-                token,
+                accessToken,
+                refreshToken:session?.refreshToken
             };
     
         } 
@@ -71,6 +98,77 @@ class UserService
             throw error;   
         }
     }
+
+    async RefreshAccessToken(refreshToken:string)
+    {
+        try 
+        {
+            const session=await sessionRepo.GetSessionByRefreshToken({refreshToken})
+            await sessionRepo.UpdateSessionLastUsed(session!.id);
+            const accessToken=this.generateAccessToken(session!.userId);
+            const user=await userRepo.getUserById(session!.userId)
+            return{
+                user:{
+                    id:user?.id,
+                    email:user?.email,
+                    username:user?.username,
+                },
+                accessToken
+            }        
+        } 
+        catch (error) 
+        {
+            console.log('Error in refresh token:', error);
+            throw error;
+            
+        }
+    }
+
+    async Logout(data:{refreshToken:string})
+    {
+        try 
+        {
+            await sessionRepo.DeleteSession(data)
+            return { message: 'Logged out successfully' };
+        } 
+        catch (error) 
+        {
+            console.log('Error in logout:', error);
+            throw error;    
+        }
+    }
+    async LogoutAlldevices(data:{userId:string})
+    {
+        try 
+        {
+            await sessionRepo.DeleteAllUsersSessions(data)
+            return { message: 'Logged out from all devices' };
+            
+        } 
+        catch (error) 
+        {
+            console.log('Error in logout all devices:', error);
+            throw error;
+        }
+
+    }
+
+    async GetActiveSessions(data:{userId:string})
+    {
+        try 
+        {
+            const userSessions=await sessionRepo.GetUserSessions(data)
+            return userSessions;
+            
+        } 
+        catch (error) 
+        {
+            console.log('Error getting active sessions:', error);
+            throw error;    
+        }
+    }
+
+
 
     async CreateRoom(data:any)
     {

@@ -10,12 +10,15 @@ export const SignUp=async(req:AuthRequest,res:Response)=>{
         const parsed=UserSchema.safeParse(req.body)
         if(!parsed.success)
         {
-            return res.json({
-                message:"Incorrect inputs"
-            })
+            return res.status(400).json({
+            message: "Incorrect inputs",
+            errors: parsed.error,
+        });
         }
-        const result=await userService.SignUp(parsed.data);
-        res.status(200).json({
+        const deviceInfo=req.headers['user-agent']||'Unknown'
+        const ipAddress=req.ip||req.socket.remoteAddress||'Unknown'
+        const result=await userService.SignUp({...parsed.data,deviceInfo,ipAddress});
+        return res.status(201).json({
             message:"User signed up successfully",
             data:result
         })
@@ -23,7 +26,7 @@ export const SignUp=async(req:AuthRequest,res:Response)=>{
     } 
     catch (error) 
     {
-        res.status(400).json({
+        return res.status(400).json({
             message:"can't signup successfully",
             err: error
         })   
@@ -37,12 +40,16 @@ export const SignIn=async(req:AuthRequest,res:Response)=>
         const parsed=SignInSchema.safeParse(req.body)
          if(!parsed.success)
         {
-            return res.json({
-                message:"Incorrect inputs"
-            })
+           return res.status(400).json({
+                message: "Incorrect inputs",
+                errors: parsed.error,
+            });
         }
-        const result=await userService.SignIN(parsed.data);
-        res.status(200).json({
+        const deviceInfo = req.headers['user-agent'] || 'Unknown';
+        const ipAddress = req.ip || req.socket.remoteAddress || 'Unknown';
+
+        const result=await userService.SignIN({...parsed.data,deviceInfo,ipAddress});
+        return res.status(200).json({
             message:"User signed in successfully",
             data:result
         })
@@ -50,13 +57,107 @@ export const SignIn=async(req:AuthRequest,res:Response)=>
     } 
     catch (error) 
     {
-        res.status(400).json({
+        return res.status(400).json({
             message:"can't signin successfully",
             err: error
         })   
     }
 
 }
+
+export const RefreshAccessToken=async(req:AuthRequest,res:Response)=>{
+    try 
+    {
+        const {refreshToken}=req.body
+        if (!refreshToken) 
+        {
+            return res.status(400).json({
+            message: "Refresh token is required",
+            });
+        }
+        const result=await userService.RefreshAccessToken(refreshToken);
+        return res.status(200).json({
+            message: "Token refreshed successfully",
+            data: result,
+        });
+    } 
+    catch (error:any) 
+    {
+        return res.status(401).json({
+        message: "Invalid or expired refresh token",
+        error: error.message,
+        });
+    }
+}
+
+export const Logout=async(req:AuthRequest,res:Response)=>{
+    try 
+    {
+        const {refreshToken}=req.body;
+        if(!refreshToken)
+        {
+            return res.status(400).json({
+            message: "Refresh token is required",
+            });
+        }
+        const result=await userService.Logout(refreshToken);
+        return res.status(200).json({
+        message: result.message,
+        });
+    } catch (error:any) 
+    {
+        return res.status(400).json({
+        message: "Logout failed",
+         error: error.message,
+    });
+        
+    }
+}
+
+export const LogoutAllDevices = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId!;
+
+    const result = await userService.LogoutAlldevices({userId});
+
+    return res.status(200).json({
+      message: result.message,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      message: "Logout from all devices failed",
+      error: error.message,
+    });
+  }
+};
+
+export const GetActiveSessions = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.params.userId;
+    if(!userId)
+    {
+        return res.status(400).json({
+            message: 'UserId not provided in the params'
+        })
+    }
+
+    const sessions = await userService.GetActiveSessions({userId});
+
+    return res.status(200).json({
+      message: "Active sessions retrieved successfully",
+      sessions: sessions,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      message: "Failed to get active sessions",
+      error: error.message,
+    });
+  }
+};
+
+
+
+
 export const CreateRoom=async(req:AuthRequest,res:Response)=>{
      try 
     {

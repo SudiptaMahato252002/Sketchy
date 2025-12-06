@@ -55,6 +55,34 @@ class UserRepository
             throw error
         }
     }
+    async getUserById(userId:string)
+    {
+        try 
+        {
+            const user=await db
+                .select(
+                    {
+                        id:users.id,
+                        email: users.email,
+                        username: users.username,
+                        createdAt: users.createdAt
+                    }
+                )
+                .from(users)
+                .where(eq(users.id,userId))
+                .limit(1)
+            if(user.length===0)
+            {
+                throw new Error('User not found');
+            }
+            return user[0]
+        } 
+        catch (error) 
+        {
+            console.log('Error getting user by id:', error);
+            throw error;
+        }
+    }
 
     async CreateRoom()
     {

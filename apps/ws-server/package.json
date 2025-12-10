@@ -7,9 +7,9 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "@repo/backend-common": "*",
+    "@repo/db": "*",
     "@repo/typescript-config": "*",
-    "@repo/backend-common":"*",
-    "@repo/db":"*",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/ws": "^8.18.1",
     "dotenv": "^17.2.3",

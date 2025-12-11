@@ -2,7 +2,6 @@ import { SignInSchema, UserSchema } from "@repo/common/config";
 import { AuthRequest } from "../middlewares/middleware";
 import { UserService } from "../services/User-service"
 import { Response } from "express";
-import { console } from "inspector";
 const userService=new UserService();
 
 export const SignUp=async(req:AuthRequest,res:Response)=>{
@@ -158,26 +157,3 @@ export const GetActiveSessions = async (req: AuthRequest, res: Response) => {
     });
   }
 };
-
-
-
-
-export const CreateRoom=async(req:AuthRequest,res:Response)=>{
-     try 
-    {
-        const data=req.body
-        const room=userService.CreateRoom(data);
-        res.status(200).json({
-            message:"Room created successfully",
-            room:room
-        })
-        
-    } 
-    catch (error) 
-    {
-        res.status(400).json({
-            message:"can't create room",
-            err: error
-        })   
-    }
-}

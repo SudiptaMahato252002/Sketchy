@@ -1,7 +1,5 @@
 import { WebSocketServer ,WebSocket} from "ws";
 import * as url from 'url'
-import jwt, { JwtPayload } from 'jsonwebtoken'
-import { JWT_SECRET } from "@repo/backend-common/config";
 import { verifyTokenAndGetUser } from "./utils/auth";
 import ConnectionManager from "./managers/ConnectionManager";
 import RoomManager from "./managers/RoomManager";
@@ -9,7 +7,7 @@ import { rooms } from "@repo/db/schema";
 import { db } from "@repo/db/client";
 import {eq} from 'drizzle-orm'
 import { MessagePayload } from "./types";
-import { error } from "console";
+
 
 
 const connectionManager=ConnectionManager;

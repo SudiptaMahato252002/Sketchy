@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm"
 import { db } from '@repo/db/client'
-import { users } from "@repo/db/schema"
+import { rooms, users } from "@repo/db/schema"
 import bcrypt from 'bcrypt'
 
 
@@ -84,13 +84,84 @@ class UserRepository
         }
     }
 
-    async CreateRoom()
+    async CreateRoom(data:{adminId:string,slug:string})
     {
-        try {
-            return "room created successfully"
+        try 
+        {
+            const existingRoom=await db.select().from(rooms).where(eq(rooms.slug,data.slug)).limit(1)
+            if (existingRoom.length > 0) {
+                throw new Error('Room with this slug already exists');
+            }
+
+
+            const newRoom=await db.insert(rooms).values({
+                slug:data.slug,
+                adminId:data.adminId,
+            }).returning()
+           return newRoom[0];
         } catch (error) {
             console.log("Error in room-creation")
             throw error
+        }
+
+    }
+    async GetUserRooms(userId:string)
+    {
+        try 
+        {
+            const room=await db.select().from(rooms).where(eq(rooms.adminId,userId))
+            if(room.length===0)
+            {
+                throw new Error('User has no rooms');
+            }
+            return room
+            
+        } catch (error) {
+            console.log("Error getting user rooms:", error);
+            throw error;
+        }
+    }
+
+    async GetRoomById(roomId:number)
+    {
+        try 
+        {
+            const room=await db.select().from(rooms).where(eq(rooms.id,roomId)).limit(1)
+            if(room.length===0)
+            {
+                throw new Error('Room not found');
+            }
+            return room[0]
+            
+        } 
+        catch (error) 
+        {
+            console.log("Error getting room by id:", error);
+            throw error;    
+        }
+    }
+
+    async DeleteRoom(roomId:number,userId:string)
+    {
+        try 
+        {
+            const room=await db.select().from(rooms).where(eq(rooms.id,roomId)).limit(1)
+            if(room.length===0)
+            {
+                throw new Error('Room not found');
+            }
+            if(room[0]?.adminId!==userId)
+            {
+                throw new Error('Only room admin can delete the room');
+            }
+
+            await db.delete(rooms).where(eq(rooms.id,roomId))
+            return { message: 'Room deleted successfully' }
+        } 
+        catch (error) 
+        {
+            console.log("Error deleting room:", error);
+            throw error;
         }
 
     }

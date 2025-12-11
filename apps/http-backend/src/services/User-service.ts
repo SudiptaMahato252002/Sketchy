@@ -170,17 +170,85 @@ class UserService
 
 
 
-    async CreateRoom(data:any)
+    async CreateRoom(data:{adminId:string,slug:string})
     {
         try 
         {
-            const response=await userRepo.CreateRoom()
+            if(!data.slug)
+            {
+                throw new Error('Room slug is required');
+            }
+            if(!data.adminId)
+            {
+                throw new Error('User ID is required');
+            }
+            await userRepo.getUserById(data.adminId)
+            const response=await userRepo.CreateRoom({
+                adminId:data.adminId,
+                slug:data.slug
+            })
             return response
         } 
         catch (error) 
         {
-            console.log("Error in user-service")
+            console.log("Error in user-service creating room")
             throw error   
+        }
+    }
+
+    async GetUserRooms(userId:string)
+    {
+        try 
+        {
+            if(!userId)
+            {
+              throw new Error('User id is required');  
+            }
+            const rooms=await userRepo.GetUserRooms(userId)
+            return rooms
+            
+        } catch (error) {
+            console.log("Error in user-service get rooms:", error);
+            throw error;
+        }
+    }
+
+    async GetRoomById(roomId:number)
+    {
+        try 
+        {
+            if(!roomId)
+            {
+                throw new Error('User id is required');
+            }
+            const room=await userRepo.GetRoomById(roomId)
+            return room
+        } catch (error) {
+            console.log("Error in user-service get room:", error);
+            throw error;
+        }
+
+    }
+
+    async DeleteRoom(roomId:number,userId:string)
+    {
+        try 
+        {
+            if(!roomId)
+            {
+                throw new Error('Room id is required');
+            }
+            if(!userId)
+            {
+                throw new Error('User id is required');
+            }
+            const result=await userRepo.DeleteRoom(roomId,userId)
+            return result;
+        } 
+        catch (error) 
+        {
+           console.log("Error in user-service delete room:", error);
+           throw error; 
         }
     }
 

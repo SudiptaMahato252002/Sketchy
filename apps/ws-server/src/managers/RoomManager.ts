@@ -119,7 +119,7 @@ class RoomManager
 
   }
 
-  public broadcastMessageToRoom(roomId:number,message:any,excludeUserId?:string)
+  public broadcastMessageToRoom(roomId:number,message:any,excludeConnectionId?:string)
   { 
     const room=this.rooms.get(roomId)
     if (!room) {
@@ -135,16 +135,19 @@ class RoomManager
     }
     
     const messageStr=JSON.stringify(message)
+    let sentCount=0
 
     for(const conn of connections)
     {
-      if(excludeUserId&&conn.userId===excludeUserId)
+      const connId=this.connectionManager.getConnectionIdByWebSocket(conn.ws)
+      if(excludeConnectionId&&connId===excludeConnectionId)
       {
         continue;
       }
       if(conn.ws.readyState===conn.ws.OPEN)
       {
         conn.ws.send(messageStr)
+        sentCount++;
       }
     }
    

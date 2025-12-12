@@ -9,7 +9,7 @@ const userService=new UserService()
 export const CreateRoom=async(req:AuthRequest,res:Response)=>{
      try 
     {
-        const parsed=CreateRoomSchema.safeParse(req)
+        const parsed=CreateRoomSchema.safeParse(req.body)
         if(!parsed.success)
         {
             return res.status(400).json({

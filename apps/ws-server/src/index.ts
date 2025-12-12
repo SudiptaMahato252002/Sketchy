@@ -7,6 +7,7 @@ import { rooms } from "@repo/db/schema";
 import { db } from "@repo/db/client";
 import {eq} from 'drizzle-orm'
 import { MessagePayload } from "./types";
+import { handleJoinRoom, handleLeaveRoom, handleRoomMessage } from "./utils/roomHandler";
 
 
 
@@ -18,6 +19,7 @@ const wss=new WebSocketServer({port:8100})
 wss.on("connection",async(ws:WebSocket,req)=>{
 
     let connectionId: string;
+    let currentRoomId:number|undefined;
     let userId: string ;
     let roomId: number;
     let username: string = ''
@@ -32,7 +34,7 @@ wss.on("connection",async(ws:WebSocket,req)=>{
         }
         const parsedUrl=url.parse(req.url,true)
         const token=parsedUrl.query.token as string|undefined
-        const roomIdStr=parsedUrl.query.roomId as string|undefined
+        const roomIdStr=parsedUrl.query.roomId as string|undefined //
         if(!token)
         {
             ws.send(JSON.stringify({ type: 'error', message: 'Token required' }));
@@ -64,88 +66,29 @@ wss.on("connection",async(ws:WebSocket,req)=>{
 
         connectionId = `${userId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-        if(roomIdStr)
+        const connectionAdded=connectionManager.addConnection(userId,connectionId,username,user!.email,ws)
+       if(!connectionAdded)
         {
-            roomId = parseInt(roomIdStr);
-            if(isNaN(roomId))
-            {
-                ws.send(JSON.stringify({ type: 'error', message: 'Invalid room ID' }));
-                ws.close();
-                return;
-            }
-
-            try 
-            {
-                const room=await db
-                .select()
-                .from(rooms)
-                .where(eq(rooms.id,roomId))
-                .limit(1)
-                
-                if (room.length === 0) 
-                {
-                    ws.send(JSON.stringify({ type: 'error', message: 'Room not found' }));
-                    ws.close();
-                    return;
-                }
-                if (!room[0]?.slug || !room[0]?.adminId) 
-                {
-                    throw new Error("Room data incomplete");
-                }
-                roomManager.getOrCreateRoom(roomId,room[0].slug,room[0].adminId)
-                const added=roomManager.addUserToRoom(roomId,userId)
-                if (!added) 
-                {
-                    console.log(`User ${username} already in room ${roomId}`);
-                }
-            } catch (error) {
-                console.error('Database error:', error);
-                ws.send(
+            ws.send(
                 JSON.stringify({
                     type: 'error',
-                    message: 'Database error while fetching room',
-                })
-                );
-                ws.close();
-                return;                        
-            }
-
-            const connectionAdded=connectionManager.addConnection(userId,connectionId,user!.username,user!.email,ws,roomId)
-
-             if (!connectionAdded) {
-                ws.send(
-                    JSON.stringify({
-                    type: 'error',
                     message: 'Failed to establish connection',
-                    })
-                );
-                ws.close();
-                return;
-            }
-
-            if(roomId)
-            {
-                const broadcastCount=roomManager.broadcastMessageToRoom(
-                    roomId,
-                    {
-                        type: 'user_joined',
-                        userId,
-                        username: user!.username,
-                        timestamp: new Date().toISOString(),
-                    },
-                    connectionId
-                )
-                console.log(`User ${user!.username} joined room ${roomId} (notified ${broadcastCount} users)`);
-                const memberCount = roomManager.getRoomUserCount(roomId);
-                ws.send(
-                    JSON.stringify({
-                    type: 'room_info',
-                    roomId,
-                    memberCount,
-                    timestamp: new Date().toISOString(),
-                }));
-
-                ws.on('message',(message:any)=>{
+                })
+            );
+            ws.close();
+            return;
+        }
+        ws.send(JSON.stringify({
+            type: 'connected',
+            userId,
+            username,
+            connectionId,
+            timestamp: new Date().toISOString(),
+        }));
+ 
+        console.log(`User ${username} connected (connection: ${connectionId})`); 
+             
+            ws.on('message',async (message:any)=>{
                     try 
                     {
                         const data:MessagePayload=JSON.parse(message.toString())
@@ -156,46 +99,41 @@ wss.on("connection",async(ws:WebSocket,req)=>{
                             connectionManager.updateActivity(connectionId)
                         }
 
-                        if(['draw','cursor_move','chat','element_update'].includes(data.type))
-                        {
-                            if(!roomId)
-                            {
-                                ws.send(
-                                JSON.stringify({
-                                    type: 'error',
-                                    message: 'Not in a room context',
-                                }));
-                                return;
-                            }
-
-                            if(!roomManager.isUserInRoom(roomId,userId))
-                            {
-                                ws.send(
-                                    JSON.stringify({
-                                        type: 'error',
-                                        message: 'User not in room',
-                                    })
-                                    );
-                                    return;
-                            }
-                        }
                         switch(data.type)
                         {
+                            case 'join_room':
+                                console.log(`before going to hnadlejoin room ${currentRoomId}`)
+                                console.log(data)
+                                currentRoomId=await handleJoinRoom(
+                                    {
+                                        ws,
+                                        userId,
+                                        username,
+                                        connectionId,
+                                        currentRoomId
+                                    }
+                                    ,data)
+                                break;
+                            case 'leave_room':
+                                currentRoomId=handleLeaveRoom({
+                                    ws,
+                                    userId,
+                                    username,
+                                    connectionId,
+                                    currentRoomId
+                                },data)
                             case 'draw':
                             case 'cursor_move':
                             case 'chat':
                             case 'element_update':
-                                if(roomId)
-                                {
-                                    roomManager.broadcastMessageToRoom(roomId,
-                                    {
-                                        type: data.type,
-                                        userId,
-                                        username,
-                                        data: data.data,
-                                        timestamp: new Date().toISOString(),
-                                    },connectionId)
-                                }
+                                console.log(currentRoomId)
+                                handleRoomMessage({
+                                    ws,
+                                    userId,
+                                    username,
+                                    connectionId,
+                                    currentRoomId,
+                                },data)
                                 break;
                             case 'ping':
                                 ws.send(
@@ -233,12 +171,12 @@ wss.on("connection",async(ws:WebSocket,req)=>{
                         connectionManager.removeConnection(connectionId)
                         console.log(`User ${username} disconnected (connection: ${connectionId})`);
 
-                        if(roomId)
+                        if(currentRoomId)
                         {
-                            const removed=roomManager.removeUserFromRoom(userId,roomId)
+                            const removed=roomManager.removeUserFromRoom(userId,currentRoomId)
                             if(removed)
                             {
-                                roomManager.broadcastMessageToRoom(roomId,
+                                roomManager.broadcastMessageToRoom(currentRoomId,
                                     {
                                         type: 'user_left',
                                         userId,
@@ -259,12 +197,11 @@ wss.on("connection",async(ws:WebSocket,req)=>{
                         connectionManager.removeConnection(connectionId);
                     }
                     
-                    if (roomId && userId) {
-                        roomManager.removeUserFromRoom(userId,roomId);
+                    if (currentRoomId && userId) {
+                        roomManager.removeUserFromRoom(userId,currentRoomId);
                     }
                 })
-            }
-        }
+                
     } catch (error:any) {
 
         console.error('Connection setup error:', error);

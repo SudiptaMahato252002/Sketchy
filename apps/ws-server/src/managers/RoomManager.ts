@@ -73,7 +73,7 @@ class RoomManager
       return true
   }
   
-  public removeUserFromRoom(userId:string,roomId:number)
+  public removeUserFromRoom(userId:string,roomId:number|undefined)
   {
     if (!roomId || !userId) {
       console.error('Invalid input: roomId and userId are required');

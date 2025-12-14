@@ -7,7 +7,9 @@ const userService=new UserService();
 export const SignUp=async(req:AuthRequest,res:Response)=>{
     try 
     {
+        console.log(req.body)
         const parsed=UserSchema.safeParse(req.body)
+        console.log(parsed)
         if(!parsed.success)
         {
             return res.status(400).json({

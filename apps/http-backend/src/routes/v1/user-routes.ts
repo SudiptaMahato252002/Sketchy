@@ -17,6 +17,6 @@ userRouter.get("/:userId/sessions", middleware, GetActiveSessions);
 userRouter.post("/create-room",middleware,CreateRoom)
 userRouter.delete("/delete-room/:roomId",middleware,DeleteRoom)
 userRouter.get("/get-room/:roomId",middleware,GetRoomById)
-userRouter.get("/get-user-rooms/:roomId",middleware,GetUserRooms)
+userRouter.get("/get-user-rooms",middleware,GetUserRooms)
 
 export {userRouter}

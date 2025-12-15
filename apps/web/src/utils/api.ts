@@ -65,6 +65,7 @@ export async function GetRoomById(roomId:number)
             }
         }
     )
+    return response.data
 }
 
 export async function GetUserRooms()
@@ -77,6 +78,8 @@ export async function GetUserRooms()
             'Authorization':`Bearer ${accessToken}`
         }       
     })
+
+    return resposne.data
 }
 
 

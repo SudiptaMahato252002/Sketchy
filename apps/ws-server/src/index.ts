@@ -104,7 +104,7 @@ wss.on("connection",async(ws:WebSocket,req)=>{
                             case 'join_room':
                                 console.log(`before going to hnadlejoin room ${currentRoomId}`)
                                 console.log(data)
-                                currentRoomId=await handleJoinRoom(
+                                const newRoomId=await handleJoinRoom(
                                     {
                                         ws,
                                         userId,
@@ -113,6 +113,9 @@ wss.on("connection",async(ws:WebSocket,req)=>{
                                         currentRoomId
                                     }
                                     ,data)
+                                    console.log(`AFTER handleJoinRoom - returned: ${newRoomId}, was: ${currentRoomId}`);
+                                    currentRoomId = newRoomId;
+                                    console.log(`UPDATED currentRoomId to: ${currentRoomId}`);
                                 break;
                             case 'leave_room':
                                 currentRoomId=handleLeaveRoom({

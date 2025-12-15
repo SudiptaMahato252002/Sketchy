@@ -37,6 +37,7 @@ export async function handleJoinRoom(ctx:RoomContext,data:MessagePayload)
                     }
                     try 
                     {
+                        console.log('🔍 Step 1: Fetching room from database...');
                         const room=await db.select().from(rooms).where(eq(rooms.id,roomId)).limit(1)
                         if (room.length === 0) 
                         {
@@ -44,25 +45,39 @@ export async function handleJoinRoom(ctx:RoomContext,data:MessagePayload)
                                 type: 'error',
                                 message: 'Room not found'
                             }));
-                            return;
+                            return currentRoomId;
                         }
+                        console.log('✅ Step 2: Room found:', room[0]);
 
                         if(!room[0]?.slug||!room[0].adminId)
                         {
                             throw new Error("Room data incomplete");
                         }
+                        console.log('🔍 Step 3: Creating/getting room in memory...');
                         roomManager.getOrCreateRoom(roomId,room[0].slug,room[0].adminId)
+                        
+                        console.log('🔍 Step 4: Adding user to room...');
                         const added=roomManager.addUserToRoom(roomId,userId)
+                        console.log(`User added: ${added}`);
                         if (!added) {
                             console.log(`User ${username} already in room ${roomId}`);
                         }
+                         console.log('🔍 Step 5: Updating connection...');
                         const conn=connectionManager.getConnection(connectionId)
                         if(conn)
                         {
                             conn.roomId=roomId
+                            console.log('✅ Connection updated with roomId');
+                        }
+                        else
+                        {
+                            console.log('❌ Connection not found!');
+
                         }
                         currentRoomId=roomId
+                        console.log(`✅ currentRoomId set to: ${currentRoomId}`);
 
+                        console.log('🔍 Step 6: Broadcasting to room...');
                         const broadcastCount=roomManager.broadcastMessageToRoom(roomId,
                             {
                                 type: 'user_joined',
@@ -72,9 +87,16 @@ export async function handleJoinRoom(ctx:RoomContext,data:MessagePayload)
                             },
                             connectionId
                         )
+
+                        console.log(`✅ Broadcast complete. Notified ${broadcastCount} users`);
+        
+                        console.log('🔍 Step 7: Getting member count...');
                         console.log(`User ${username} joined room ${roomId} (notified ${broadcastCount} users)`);
                         const memberCount=roomManager.getRoomUserCount(roomId)
                         console.log(`member count:${memberCount}`)
+                        
+                        console.log('🔍 Step 8: Sending room_joined message to client...');
+                        console.log('WebSocket state:', ws.readyState);
                         ws.send(
                             JSON.stringify({
                                 type: 'room_joined',
@@ -82,6 +104,7 @@ export async function handleJoinRoom(ctx:RoomContext,data:MessagePayload)
                                 memberCount,
                                 timestamp: new Date().toISOString(),
                             }));
+                        console.log('✅ room_joined message sent!');
 
                             return currentRoomId;
 
@@ -95,6 +118,7 @@ export async function handleJoinRoom(ctx:RoomContext,data:MessagePayload)
                                 message: 'Database error while joining room',
                             })
                         );
+                        return currentRoomId
                                 
                     }
 }

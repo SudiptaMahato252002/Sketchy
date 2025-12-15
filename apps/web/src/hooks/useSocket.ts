@@ -19,7 +19,7 @@ export const useSocket=(options:UseSocketOptions={})=>{
     const {accessToken}=useAuth()
     const [socket,setSocket]=useState<WebSocket|null>(null)
     const [isConnected,setIsConnected]=useState(false)
-    const [loading,setLoading]=useState(false)
+    const [loading,setLoading]=useState(true)
     const reconnectTimeoutRef=useRef<NodeJS.Timeout|null>(null)
     const shouldReconnect=useRef(true)
 
@@ -33,6 +33,17 @@ export const useSocket=(options:UseSocketOptions={})=>{
         const connect=()=>{
 
             ws=new WebSocket(`ws://localhost:8100?token=${accessToken}`)
+
+            ws.onmessage=(event)=>{
+                try {
+                    const data=JSON.parse(event.data)
+                    console.log('WebSocket message:', data);
+                    onMessage?.(data)  
+                } catch (error) {
+                    console.error('Failed to parse WebSocket message:', error);
+                }
+            }
+
 
             ws.onopen=()=>{
                 console.log('Websocket connected')
@@ -48,19 +59,12 @@ export const useSocket=(options:UseSocketOptions={})=>{
                     console.log(`Auto-joining room ${roomId}`);
                 }
             }
-            ws.onmessage=(event)=>{
-                try {
-                    const data=JSON.parse(event.data)
-                    console.log('WebSocket message:', data);
-                    onMessage?.(data)  
-                } catch (error) {
-                    console.error('Failed to parse WebSocket message:', error);
-                }
-            }
+            
             ws.onclose=()=>{
                 console.log('websocket disconnected')
                 setIsConnected(false)
                 setSocket(null)
+                onDisconnect?.()
 
                 if(shouldReconnect.current)
                 {
@@ -87,7 +91,7 @@ export const useSocket=(options:UseSocketOptions={})=>{
             }
             
         }
-    },[accessToken])
+    },[accessToken,autoJoinRoom])
 
     const sendMessage=(type:string,data?:any)=>{
         if(socket&&socket.readyState===WebSocket.OPEN)

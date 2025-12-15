@@ -126,6 +126,14 @@ wss.on("connection",async(ws:WebSocket,req)=>{
                             case 'draw':
                             case 'cursor_move':
                             case 'chat':
+                                console.log(currentRoomId)
+                                handleRoomMessage({
+                                    ws,
+                                    userId,
+                                    username,
+                                    connectionId,
+                                    currentRoomId
+                                },data)
                             case 'element_update':
                                 console.log(currentRoomId)
                                 handleRoomMessage({

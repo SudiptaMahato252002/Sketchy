@@ -1,5 +1,5 @@
 import { useAuth } from "@/contexts/AuthContext"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 
 interface UseSocketOptions
@@ -22,6 +22,7 @@ export const useSocket=(options:UseSocketOptions={})=>{
     const [loading,setLoading]=useState(true)
     const reconnectTimeoutRef=useRef<NodeJS.Timeout|null>(null)
     const shouldReconnect=useRef(true)
+    const hasAutoJoined=useRef(false)
 
     useEffect(()=>{
         if(!accessToken)
@@ -34,16 +35,6 @@ export const useSocket=(options:UseSocketOptions={})=>{
 
             ws=new WebSocket(`ws://localhost:8100?token=${accessToken}`)
 
-            ws.onmessage=(event)=>{
-                try {
-                    const data=JSON.parse(event.data)
-                    console.log('WebSocket message:', data);
-                    onMessage?.(data)  
-                } catch (error) {
-                    console.error('Failed to parse WebSocket message:', error);
-                }
-            }
-
 
             ws.onopen=()=>{
                 console.log('Websocket connected')
@@ -52,18 +43,46 @@ export const useSocket=(options:UseSocketOptions={})=>{
                 setSocket(ws)
                 onConnect?.();
 
-                if(autoJoinRoom)
+                if(autoJoinRoom && !hasAutoJoined.current)
                 {
                     const roomId=typeof autoJoinRoom==='string'?parseInt(autoJoinRoom):autoJoinRoom
-                    ws.send(JSON.stringify({type:'join_room',data:{roomId}}))
-                    console.log(`Auto-joining room ${roomId}`);
+                    console.log(`🚀 Auto-joining room ${roomId}...`);
+                    
+                    setTimeout(()=>{
+                        if(ws.readyState===WebSocket.OPEN)
+                        {
+                            ws.send(JSON.stringify({type:'join_room',data:{roomId}}))
+                            hasAutoJoined.current = true;
+                            console.log(`Auto-joining room ${roomId}`);
+
+                        }
+                    },100)
                 }
             }
+
+            ws.onmessage=(event)=>{
+                console.log('🔵 RAW WebSocket Event:', event);
+                console.log('🔵 RAW WebSocket Data (string):', event.data);
+                try {
+                    const data=JSON.parse(event.data)
+                    //console.log('WebSocket message:', data);
+                    console.log('✅ PARSED WebSocket Data:', data);
+                    console.log('✅ Message Type:', data.type);
+                    console.log('✅ Full Data Structure:', JSON.stringify(data, null, 2));
+                    onMessage?.(data)  
+                } catch (error) {
+                    console.error('Failed to parse WebSocket message:', error);
+                }
+            }
+
+
+            
             
             ws.onclose=()=>{
                 console.log('websocket disconnected')
                 setIsConnected(false)
                 setSocket(null)
+                hasAutoJoined.current=false
                 onDisconnect?.()
 
                 if(shouldReconnect.current)
@@ -83,6 +102,7 @@ export const useSocket=(options:UseSocketOptions={})=>{
         connect()
         return ()=>{
             shouldReconnect.current=false
+            hasAutoJoined.current=false
             if (reconnectTimeoutRef.current) {
                 clearTimeout(reconnectTimeoutRef.current);
             }
@@ -91,9 +111,10 @@ export const useSocket=(options:UseSocketOptions={})=>{
             }
             
         }
-    },[accessToken,autoJoinRoom])
+    },[accessToken])
 
-    const sendMessage=(type:string,data?:any)=>{
+    const sendMessage=useCallback((type:string,data?:any)=>{
+
         if(socket&&socket.readyState===WebSocket.OPEN)
         {
             socket.send(JSON.stringify({type,data}))
@@ -102,15 +123,20 @@ export const useSocket=(options:UseSocketOptions={})=>{
         {
             console.warn('Websocket is connected')
         }
-    }
-
-    const joinRoom=(roomId:number)=>{
+    },[socket])
+    
+    const joinRoom=useCallback((roomId:number)=>{
+        console.log(`🚀 Manually joining room ${roomId}...`);
         sendMessage('join_room',{roomId})
-    }
+    },[sendMessage])
+    
 
-    const leaveRoom=()=>{
+    const leaveRoom=useCallback(()=>{
+        console.log('👋 Leaving room...');
         sendMessage('leave_room')
-    }
+    },[sendMessage])
+    
+    
 
     return{
         socket,

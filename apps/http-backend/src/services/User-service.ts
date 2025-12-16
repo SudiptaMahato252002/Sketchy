@@ -59,7 +59,7 @@ class UserService
                     createdAt:user?.createdAt
                 },
                 accessToken,
-                refreshToke:session?.refreshToken
+                refreshToken:session?.refreshToken
             }
         } 
         catch (error) 

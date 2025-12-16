@@ -32,10 +32,10 @@ export default function RoomPage({params}:{params:Promise<{roomId:string}>}){
             try {
                 const response=await GetRoomById(parseInt(roomId))
                 setAdminId(response.room.adminId)
-                
-                   
+                console.log('Room details fetched:', response.room);
             } catch (error) {
                  console.error('Failed to fetch room details:', error);
+                  setError('Failed to load room details');
             }
             fetchRoomDetails();
         }
@@ -46,10 +46,16 @@ export default function RoomPage({params}:{params:Promise<{roomId:string}>}){
         {
             autoJoinRoom:roomId,
             onMessage:(data)=>{
+
+                console.log('📨 Received WebSocket message:', data);
                 //setMessages(prev=>[...prev,`${data.type}: ${JSON.stringify(data)}`])
                 if (data.type === 'error') {
                     setError(data.message);
+                    console.error('Error from server:', data.message);
                 } else if (data.type === 'room_joined') {
+                    console.log('✅ Room joined!', data);
+                    console.log('Room ID:', data.roomId);
+                    console.log('Member count:', data.memberCount);
                     setRoomJoined(true);
                     setError('');
                     setMemberCount(data.memberCount)
@@ -68,7 +74,7 @@ export default function RoomPage({params}:{params:Promise<{roomId:string}>}){
                 {
                     setMessages(prev=>[...prev,{
                         username:data.username,
-                        message:data.message,
+                        message:data.data?.message||data.message,
                         timestamp:data.timestamp,
                         userId:data.userId
                     }])
@@ -92,6 +98,12 @@ export default function RoomPage({params}:{params:Promise<{roomId:string}>}){
             }
         }
     )
+    console.log('🔍 Room State Check:');
+console.log('isConnected:', isConnected);
+console.log('roomJoined:', roomJoined);
+console.log('loading:', loading);
+console.log('user:', user);
+console.log('adminId:', adminId);
 
     if (!user) 
     {
@@ -106,14 +118,19 @@ export default function RoomPage({params}:{params:Promise<{roomId:string}>}){
     }
     const handleSendChat=(e:React.FormEvent)=>{
         e.preventDefault()
+
+        console.log('🚀 Attempting to send chat...');
+        console.log('Chat input:', chatInput);
+        console.log('Is connected:', isConnected);
+        console.log('Room joined:', roomJoined);
         if(!chatInput.trim())return;
         sendMessage('chat',{message:chatInput})
-        setMessages(prev => [...prev, {
-            username: user.username!,
-            message: chatInput,
-            timestamp: new Date().toISOString(),
-            userId:user.userId
-            }]);
+        // setMessages(prev => [...prev, {
+        //     username: user.username!,
+        //     message: chatInput,
+        //     timestamp: new Date().toISOString(),
+        //     userId:user.userId
+        //     }]);
         setChatInput('')
 
     }
@@ -141,7 +158,11 @@ export default function RoomPage({params}:{params:Promise<{roomId:string}>}){
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-                <strong>User:</strong> {user.username}
+                <strong>User:</strong> {user.username} {isAdmin && '👑 (Admin)'}
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+                <strong>Members:</strong> {memberCount}
             </div>
 
             {error &&(

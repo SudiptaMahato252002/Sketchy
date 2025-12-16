@@ -137,6 +137,7 @@ wss.on("connection",async(ws:WebSocket,req)=>{
                                     connectionId,
                                     currentRoomId
                                 },data)
+                                break;
                             case 'element_update':
                                 console.log(currentRoomId)
                                 handleRoomMessage({

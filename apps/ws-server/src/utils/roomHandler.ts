@@ -21,7 +21,7 @@ export async function handleJoinRoom(ctx:RoomContext,data:MessagePayload)
                     // console.log(ctx)
                     let {ws,userId,username,connectionId,currentRoomId}=ctx
                     const roomId=data.data?.roomId
-                    console.log(`roomid in handle join room ${roomId}`)
+                    // console.log(`roomid in handle join room ${roomId}`)
                     if(!roomId||isNaN(roomId))
                     {
                         ws.send(JSON.stringify({
@@ -37,7 +37,7 @@ export async function handleJoinRoom(ctx:RoomContext,data:MessagePayload)
                     }
                     try 
                     {
-                        console.log('🔍 Step 1: Fetching room from database...');
+                        // console.log('🔍 Step 1: Fetching room from database...');
                         const room=await db.select().from(rooms).where(eq(rooms.id,roomId)).limit(1)
                         if (room.length === 0) 
                         {
@@ -47,22 +47,22 @@ export async function handleJoinRoom(ctx:RoomContext,data:MessagePayload)
                             }));
                             return currentRoomId;
                         }
-                        console.log('✅ Step 2: Room found:', room[0]);
+                        // console.log('✅ Step 2: Room found:', room[0]);
 
                         if(!room[0]?.slug||!room[0].adminId)
                         {
                             throw new Error("Room data incomplete");
                         }
-                        console.log('🔍 Step 3: Creating/getting room in memory...');
+                        // console.log('🔍 Step 3: Creating/getting room in memory...');
                         roomManager.getOrCreateRoom(roomId,room[0].slug,room[0].adminId)
                         
-                        console.log('🔍 Step 4: Adding user to room...');
+                        // console.log('🔍 Step 4: Adding user to room...');
                         const added=roomManager.addUserToRoom(roomId,userId)
-                        console.log(`User added: ${added}`);
+                        // console.log(`User added: ${added}`);
                         if (!added) {
                             console.log(`User ${username} already in room ${roomId}`);
                         }
-                         console.log('🔍 Step 5: Updating connection...');
+                        //  console.log('🔍 Step 5: Updating connection...');
                         const conn=connectionManager.getConnection(connectionId)
                         if(conn)
                         {
@@ -77,12 +77,14 @@ export async function handleJoinRoom(ctx:RoomContext,data:MessagePayload)
                         currentRoomId=roomId
                         console.log(`✅ currentRoomId set to: ${currentRoomId}`);
 
-                        console.log('🔍 Step 6: Broadcasting to room...');
+                        // console.log('🔍 Step 6: Broadcasting to room...');
+                        const memberCount=roomManager.getRoomUserCount(roomId)
                         const broadcastCount=roomManager.broadcastMessageToRoom(roomId,
                             {
                                 type: 'user_joined',
                                 userId,
                                 username,
+                                memberCount,
                                 timestamp: new Date().toISOString(),
                             },
                             connectionId
@@ -90,13 +92,13 @@ export async function handleJoinRoom(ctx:RoomContext,data:MessagePayload)
 
                         console.log(`✅ Broadcast complete. Notified ${broadcastCount} users`);
         
-                        console.log('🔍 Step 7: Getting member count...');
+                        // console.log('🔍 Step 7: Getting member count...');
                         console.log(`User ${username} joined room ${roomId} (notified ${broadcastCount} users)`);
-                        const memberCount=roomManager.getRoomUserCount(roomId)
+                        
                         console.log(`member count:${memberCount}`)
                         
-                        console.log('🔍 Step 8: Sending room_joined message to client...');
-                        console.log('WebSocket state:', ws.readyState);
+                        // console.log('🔍 Step 8: Sending room_joined message to client...');
+                        // console.log('WebSocket state:', ws.readyState);
                         ws.send(
                             JSON.stringify({
                                 type: 'room_joined',

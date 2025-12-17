@@ -39,7 +39,9 @@ const DashboardPage = () => {
       {
         const response=await CreateRoom(slug)
         const createdRoomId=response.room.id
-        router.push(`/room/${createdRoomId}`)  
+        const createdRoomSlug=response.room.slug
+        alert(`Succesfully created room ${createdRoomSlug} and roomId is ${createdRoomId}`)
+        // router.push(`/room/${createdRoomId}`)  
       } 
       catch (error:any) 
       {

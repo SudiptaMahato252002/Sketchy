@@ -21,7 +21,6 @@ wss.on("connection",async(ws:WebSocket,req)=>{
     let connectionId: string;
     let currentRoomId:number|undefined;
     let userId: string ;
-    let roomId: number;
     let username: string = ''
 
     try 
@@ -34,7 +33,6 @@ wss.on("connection",async(ws:WebSocket,req)=>{
         }
         const parsedUrl=url.parse(req.url,true)
         const token=parsedUrl.query.token as string|undefined
-        const roomIdStr=parsedUrl.query.roomId as string|undefined //
         if(!token)
         {
             ws.send(JSON.stringify({ type: 'error', message: 'Token required' }));

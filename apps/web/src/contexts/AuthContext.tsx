@@ -1,5 +1,5 @@
 'use client'
-import React, { createContext, useContext, useEffect, useState } from "react"
+import React, { createContext, useContext, useEffect, useRef, useState } from "react"
 
 interface User
 {
@@ -28,19 +28,17 @@ export function AuthProvider({children}:{children:React.ReactNode})
     const [user, setUser] = useState<User|null>(null)
     const [accessToken, setAccessToken] = useState<string|null>(null)
     const [refreshToken,setRefreshToken]=useState<string|null>(null)
-
+    
     useEffect(()=>{
-        const storedUser=localStorage.getItem('user')
-        const storedAccessToken=localStorage.getItem('accessToken')
-        const storedRefreshToken=localStorage.getItem('refreshToken')
-
-        if(storedUser && storedAccessToken && storedRefreshToken)
-        {
-            setUser(JSON.parse(storedUser))
-            setAccessToken(storedAccessToken)
-            setRefreshToken(storedRefreshToken)
-        }
-
+            const storedUser=localStorage.getItem('user')
+            const storedAccessToken=localStorage.getItem('accessToken')
+            const storedRefreshToken=localStorage.getItem('refreshToken')
+            if(storedUser && storedAccessToken && storedRefreshToken)
+            {
+                setUser(JSON.parse(storedUser))
+                setAccessToken(storedAccessToken)
+                setRefreshToken(storedRefreshToken)
+            }
     },[])
 
 
@@ -72,7 +70,7 @@ export function AuthProvider({children}:{children:React.ReactNode})
             refreshToken,
             login,
             logout,
-            isAuthenticated:!!accessToken&&!!user
+            isAuthenticated:!!accessToken&&!!user,
             }}>
             {children}
         </AuthContext.Provider>

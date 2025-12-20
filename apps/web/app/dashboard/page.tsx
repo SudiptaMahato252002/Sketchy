@@ -61,7 +61,7 @@ const DashboardPage = () => {
       try 
       {
         await GetRoomById(parseInt(roomId))
-        router.push(`/room/${roomId}`)
+        router.push(`/canvas/${roomId}`)
         
       } catch (error:any) {
         setError(error.message || 'Room not found');

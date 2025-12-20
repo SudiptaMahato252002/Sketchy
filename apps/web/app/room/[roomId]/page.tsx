@@ -73,9 +73,6 @@ export default function RoomPage({params}:RoomPageProps){
         {
             console.log("WebSocket already connected");
             return;
-
-            // wsRef.current.close()
-            // wsRef.current = null
         }
         connectingRef.current=false
         let ws=new WebSocket(`ws://localhost:8100?token=${accessToken}`)
@@ -85,8 +82,6 @@ export default function RoomPage({params}:RoomPageProps){
             connectingRef.current=false
             console.log('Websocket connected')
             alert('websocket connected')
-
-            // ws.send(JSON.stringify({type:'join_room',data:{roomId:roomId}}))
         }
 
         ws.onmessage=(event)=>{

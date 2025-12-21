@@ -15,7 +15,7 @@ type Shape={
 }
 
 
-export function initDraw(canvas:HTMLCanvasElement)
+export function initDraw(canvas:HTMLCanvasElement,onElementCreated?:(shape:Shape)=>void)
 {
     const ctx=canvas.getContext('2d')
     if(!ctx) return {cleanUp:()=>{}}
@@ -43,7 +43,7 @@ export function initDraw(canvas:HTMLCanvasElement)
         for (const shape of existingShapes)
         {
             if(shape.type==='rect')
-            {
+            {           
                 ctx!.strokeRect(shape.x,shape.y,shape.width,shape.height)
             }
 
@@ -125,31 +125,38 @@ export function initDraw(canvas:HTMLCanvasElement)
 
       if(currentTool==='rect')
       {
-          existingShapes.push({
-          type:'rect',
+          const shape:Shape={
+            type:'rect',
           x:startPoint.x,
           y:startPoint.y,
           width:endPoint.x-startPoint.x,
           height:endPoint.y-startPoint.y
-        })
+          }
+          existingShapes.push(shape)
+          onElementCreated?.(shape)
       }
       if(currentTool==='circle')
       {
         const radius=Math.hypot(endPoint.x-startPoint.x,endPoint.y-startPoint.y)
-        existingShapes.push({
-          type:'circle',
+        const shape:Shape={
+            type:'circle',
           x:startPoint.x,
           y:startPoint.y,
           radius:radius
-        })
+        }
+        
+        existingShapes.push(shape)
+        onElementCreated?.(shape)
       }
       
       if(currentTool==='pencil')
       {
-        existingShapes.push({
-          type:'pencil',
+        const shape:Shape={
+            type:'pencil',
           points:[...currentPencilPoints]
-        })
+        }
+        existingShapes.push(shape)
+        onElementCreated?.(shape)
         currentPencilPoints=[]
       }
 
@@ -176,6 +183,12 @@ export function initDraw(canvas:HTMLCanvasElement)
    
       setTool:(tool:'rect'|'circle'|'pencil')=>{
         currentTool=tool
+      },
+      addRemoteShape:(shape:Shape)=>{
+        if(!shape)return
+        existingShapes.push(shape)
+        drawBackground()
+        redraw()
       },
       cleanUp:()=>{
         canvas.removeEventListener("mousedown",onMouseDown)

@@ -208,15 +208,14 @@ export function handleRoomMessage(ctx:RoomContext,data:MessagePayload)
                 return;
 
         }
-
-        roomManager.broadcastMessageToRoom(currentRoomId,
-            {
+        const message={
                 type: data.type,
                 userId,
                 username,
-                data: data.data,
+                data: data,
                 timestamp: new Date().toISOString(),
-            },connectionId)
+            }
+        roomManager.broadcastMessageToRoom(currentRoomId,message,connectionId)
 
         
     } catch (error) {

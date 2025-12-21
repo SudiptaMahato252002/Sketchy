@@ -54,7 +54,9 @@ export default function Canvas({params}:RoomParams){
     
     const canvas=canvasRef.current
     if(!canvas)return
-    drawApiRef.current=initDraw(canvas)
+    drawApiRef.current=initDraw(canvas,(shape)=>{
+      wsRef.current?.send(JSON.stringify({type:'element_update',shape}))
+    })
 
     connectWebsocket()
 
@@ -99,6 +101,7 @@ export default function Canvas({params}:RoomParams){
                 const data = JSON.parse(event.data);
 
                 console.log("WebSocket message:", data);
+                console.log(data)
                 if(data.type==='connected')
                 {
                     alert(
@@ -140,6 +143,10 @@ export default function Canvas({params}:RoomParams){
                         `Timestamp: ${msg.timestamp}`
                         )
 
+                }
+                else if(data.type==='element_update')
+                {
+                  drawApiRef.current.addRemoteShape(data.data.shape)
                 }
                 
                 
